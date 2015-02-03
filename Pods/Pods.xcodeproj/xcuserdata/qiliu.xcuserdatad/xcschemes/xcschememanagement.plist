@@ -6,33 +6,53 @@
 	<dict>
 		<key>Pods-AFNetworking.xcscheme</key>
 		<dict>
-			<key>orderHint</key>
-			<integer>2</integer>
+			<key>isShown</key>
+			<false/>
 		</dict>
 		<key>Pods-BDBOAuth1Manager.xcscheme</key>
 		<dict>
-			<key>orderHint</key>
-			<integer>3</integer>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>Pods-RKDropdownAlert.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>Pods-SVProgressHUD.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
 		</dict>
 		<key>Pods.xcscheme</key>
 		<dict>
-			<key>orderHint</key>
-			<integer>1</integer>
+			<key>isShown</key>
+			<false/>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>3ADFDC4C2D6C40FDA9C166B0</key>
+		<key>1FA29D92EB78F820B2D9A7AF</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>96C63594E4EF45049741F64F</key>
+		<key>52ED74ACD2FECE64968C5267</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>BA3292AA93EC4C249841C31D</key>
+		<key>574D84521BB149DBA4C898A2</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>9B08229F47B51761E06985FA</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>E14CBCD06A38256B0602D46C</key>
 		<dict>
 			<key>primary</key>
 			<true/>

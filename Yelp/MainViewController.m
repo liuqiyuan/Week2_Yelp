@@ -11,6 +11,7 @@
 #import "Business.h"
 #import "BusinessCell.h"
 #import "FiltersViewController.h"
+#import "SVProgressHUD.h"
 
 NSString * const kYelpConsumerKey = @"vxKwwcR_NMQ7WaEiQBK_CA";
 NSString * const kYelpConsumerSecret = @"33QCvh5bIF5jIHR5klQr7RtBDhQ";
@@ -27,6 +28,8 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 @property (nonatomic, strong) NSString *searchKeyword;
 
 - (void) fetchBusinessWithQuery:(NSString *)query params:(NSDictionary *)params;
+
+- (NSDictionary *) getDictFromSearchKeyword:(NSString *)keyword;
 
 @end
 
@@ -53,6 +56,14 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     
     self.title = @"Yelp";
     
+    // Set table view
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    
+    [self.tableView registerNib:[UINib nibWithNibName:@"BusinessCell" bundle:nil] forCellReuseIdentifier:@"BusinessCell"];
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+
+    
     // Set refresh controll
     self.refreshController = [[UIRefreshControl alloc]init];
     [self.refreshController addTarget:self action:@selector(refreshPage) forControlEvents:UIControlEventValueChanged];
@@ -63,12 +74,6 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     searchBar.delegate = self;
     self.navigationItem.titleView = searchBar;
     
-    self.tableView.delegate = self;
-    self.tableView.dataSource = self;
-    
-    [self.tableView registerNib:[UINib nibWithNibName:@"BusinessCell" bundle:nil] forCellReuseIdentifier:@"BusinessCell"];
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
-    
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filter" style:UIBarButtonItemStylePlain target:self action:@selector(onFilterButtonClick)];
 }
 
@@ -78,7 +83,7 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 
 // Search Bar actions
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
-    [self fetchBusinessWithQuery:@"Restaurants" params:nil];
+    [self fetchBusinessWithQuery:@"Restaurants" params:[self getDictFromSearchKeyword:searchText]];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -98,11 +103,20 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     return size.height + 1;
 }
 
+#pragma helper functions
+- (NSDictionary *) getDictFromSearchKeyword:(NSString *)keyword {
+    NSMutableDictionary *filters = [NSMutableDictionary dictionary];
+    if (keyword.length > 0) {
+        [filters setObject:keyword forKey:@"category_filter"];
+    }
+    return filters;
+}
+
 #pragma - Filter delegate method
 - (void)filtersViewController:(FiltersViewController *)filtersViewController didChangeFilters:(NSDictionary *)filters {
     // Fire a new event
     [self fetchBusinessWithQuery:@"Restaurants" params:filters];
-    NSLog(@"Filter event: %@", filters);
+    NSLog(@"Applied filters: %@", filters);
 }
 
 #pragma - private method
@@ -115,12 +129,16 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 }
 
 - (void)fetchBusinessWithQuery:(NSString *)query params:(NSDictionary *)params {
+    [SVProgressHUD show];
+    [SVProgressHUD showInfoWithStatus:@"Loading ..."];
+    
     [self.client searchWithTerm:query params:params success:^(AFHTTPRequestOperation *operation, id response) {
-        NSLog(@"response: %@", response);
+        //NSLog(@"response: %@", response);
         NSArray *businessDictResponse = response[@"businesses"];
         self.businessesDict = [Business businessesWithDicts:businessDictResponse];
         [self.tableView reloadData];
         [self.refreshController endRefreshing];
+        [SVProgressHUD dismiss];
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         NSLog(@"error: %@", [error description]);
     }];

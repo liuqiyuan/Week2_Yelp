@@ -9,12 +9,23 @@
 #import "FiltersViewController.h"
 #import "SwitchCell.h"
 
+static NSString *const SECTION_DEAL = @"DEAL";
+static NSString *const SECTION_CATEGORY = @"CATEGORY";
+static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
+
+
 @interface FiltersViewController () <UITableViewDataSource, UITableViewDelegate, SwitchCellDelegate>
 
 @property (nonatomic, readonly) NSDictionary *filters;
+@property (nonatomic, readonly) NSArray *filterSectionsArray;
+@property (nonatomic, strong) NSMutableIndexSet *expandedSections;
+
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (nonatomic, strong) NSArray *categories;
 @property (nonatomic, strong) NSMutableSet *selectedCategories;
+
+@property (nonatomic, assign) BOOL isDeal;
+
 
 - (void) initCategories;
 
@@ -25,7 +36,6 @@
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        self.selectedCategories = [[NSMutableSet alloc]init];
         [self initCategories];
     }
     return self;
@@ -38,17 +48,35 @@
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(onCancelButtonClick)];
      self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]initWithTitle:@"Apply" style:UIBarButtonItemStylePlain target:self action:@selector(onApplyButtonClick)];
     
+    self.title = @"Filters";
+    
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
+    
+    if (!self.selectedCategories) {
+        self.selectedCategories = [[NSMutableSet alloc]init];
+    }
     
     [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"SwitchCell"];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSDictionary *sectionDict = self.filterSectionsArray[indexPath.section];
+    NSArray *rowArray = sectionDict[@"filters"];
+    NSString *type = sectionDict[@"section"];
+    
     SwitchCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SwitchCell"];
-    cell.titleLable.text = self.categories[indexPath.row][@"name"];
-    cell.on = [self.selectedCategories containsObject:self.categories[indexPath.row]];
-    cell.delegate = self;
+    if ([type isEqualToString:SECTION_CATEGORY]) {
+        cell.titleLable.text = self.categories[indexPath.row][@"name"];
+        cell.on = [self.selectedCategories containsObject:rowArray[indexPath.row]];
+        cell.delegate = self;
+        return cell;
+    } else if ([type isEqualToString:SECTION_DEAL]) {
+        cell.titleLable.text = rowArray[indexPath.row][@"name"];
+        cell.on = self.isDeal;
+        cell.delegate = self;
+        return cell;
+    }
     return cell;
 }
 
@@ -57,22 +85,41 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.categories.count;
+    NSDictionary *dict = self.filterSectionsArray[section];
+    NSArray *arr = dict[@"filters"];
+    if ([dict[@"section"] isEqualToString:SECTION_DROPDOWN]) {
+        if (![self.expandedSections containsIndex:section]) {
+            return 1;
+        }
+    }
+    return arr.count;
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.filterSectionsArray.count;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    NSString *header = self.filterSectionsArray[section][@"title"];
+    return header;
 }
 
 #pragma - switch cell delegate methods
 - (void) switchCell:(SwitchCell *)cell didUpdateValue:(BOOL)value {
     NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
-    
-    if (value) {
-        [self.selectedCategories addObject:self.categories[indexPath.row]];
+    NSArray *rowArray = self.filterSectionsArray[indexPath.section][@"filters"];
+    if (rowArray.count > 0 && [rowArray[0][@"code"] isEqualToString:@"deal"]) {
+        self.isDeal = value;
     } else {
-        [self.selectedCategories removeObject:self.categories[indexPath.row]];
+        if (value) {
+            [self.selectedCategories addObject:self.categories[indexPath.row]];
+        } else {
+            [self.selectedCategories removeObject:self.categories[indexPath.row]];
+        }
     }
 }
 
-#pragma - private methods
-
+#pragma - getter for filters
 - (NSDictionary *)filters {
     NSMutableDictionary *filters = [NSMutableDictionary dictionary];
     if (self.selectedCategories.count > 0) {
@@ -84,6 +131,22 @@
         [filters setObject:categoryFilter forKey:@"category_filter"];
     }
     return filters;
+}
+
+#pragma - getter for filterSectionsArray
+- (NSArray *)filterSectionsArray {
+    NSMutableArray *array = [NSMutableArray array];
+    NSDictionary *dealDict = @{@"title":@"Deals", @"filters":@[@{@"name": @"Offering a Deal", @"code": @"deal"}], @"section":SECTION_DEAL};
+    NSDictionary *radiusDict = @{@"title":@"Radius", @"filters":@[@"Auto", @"1 mile", @"5 miles", @"10 miles", @"20 miles"], @"section":SECTION_DROPDOWN, @"select":@"0"};
+    NSDictionary *sortDict = @{@"title":@"Sort by", @"filters":@[@"Best Match", @"Distance", @"Rating", @"Most Reviewed"], @"section":SECTION_DROPDOWN, @"select":@"0"};
+    NSDictionary *categoryDict = @{@"title":@"Category", @"filters":self.categories, @"section":SECTION_CATEGORY};
+    
+    [array addObject: dealDict];
+    [array addObject: radiusDict];
+    [array addObject:sortDict];
+    [array addObject: categoryDict];
+    
+    return array;
 }
 
 - (void) onCancelButtonClick {
@@ -273,15 +336,5 @@
                             @{@"name" : @"Wraps", @"code": @"wraps" },
                             @{@"name" : @"Yugoslav", @"code": @"yugoslav" }];
 }
-
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 @end
