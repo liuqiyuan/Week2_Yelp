@@ -2,7 +2,7 @@
 
 This is a Yelp search app using the [Yelp API](http://developer.rottentomatoes.com/docs/read/JSON).
 
-Time spent: `6`
+Time spent: `8`
 
 ### Features
 
@@ -21,9 +21,9 @@ Time spent: `6`
 
 #### Optional
 
-- [ ] Search results page
+- [X] Search results page
    - [ ] Infinite scroll for restaurant results
-   - [ ] Implement map view of restaurant results
+   - [X] Implement map view of restaurant results
 - [ ] Filter page
    - [ ] Radius filter should expand as in the real Yelp app
    - [ ] Categories should show a subset of the full list with a "See All" row to expand. Category list is here: http://www.yelp.com/developers/documentation/category_list (Links to an external site.)
