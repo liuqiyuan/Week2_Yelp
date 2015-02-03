@@ -22,9 +22,10 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
 
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (nonatomic, strong) NSArray *categories;
-@property (nonatomic, strong) NSMutableSet *selectedCategories;
 
-@property (nonatomic, assign) BOOL isDeal;
+// Selected items
+@property (nonatomic, strong) NSMutableSet *selectedCategories;
+@property (nonatomic, assign) BOOL selectedDeal;
 
 
 - (void) initCategories;
@@ -73,7 +74,7 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
         return cell;
     } else if ([type isEqualToString:SECTION_DEAL]) {
         cell.titleLable.text = rowArray[indexPath.row][@"name"];
-        cell.on = self.isDeal;
+        cell.on = self.selectedDeal;
         cell.delegate = self;
         return cell;
     }
@@ -109,7 +110,7 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
     NSArray *rowArray = self.filterSectionsArray[indexPath.section][@"filters"];
     if (rowArray.count > 0 && [rowArray[0][@"code"] isEqualToString:@"deal"]) {
-        self.isDeal = value;
+        self.selectedDeal = value;
     } else {
         if (value) {
             [self.selectedCategories addObject:self.categories[indexPath.row]];
@@ -129,6 +130,9 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
         }
         NSString *categoryFilter = [names componentsJoinedByString:@","];
         [filters setObject:categoryFilter forKey:@"category_filter"];
+    }
+    if (self.selectedDeal) {
+        [filters setObject:@"true" forKey:@"deals_filter"];
     }
     return filters;
 }
