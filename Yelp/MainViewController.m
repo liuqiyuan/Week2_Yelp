@@ -12,6 +12,8 @@
 #import "BusinessCell.h"
 #import "FiltersViewController.h"
 #import "SVProgressHUD.h"
+#import "MapViewController.h"
+#import "MapAnnotation.h"
 
 NSString * const kYelpConsumerKey = @"vxKwwcR_NMQ7WaEiQBK_CA";
 NSString * const kYelpConsumerSecret = @"33QCvh5bIF5jIHR5klQr7RtBDhQ";
@@ -101,6 +103,21 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     [self.prototypeCell layoutIfNeeded];
     CGSize size = [self.prototypeCell.contentView systemLayoutSizeFittingSize:UILayoutFittingCompressedSize];
     return size.height + 1;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    Business *business = self.businessesDict[indexPath.row];
+    
+    MapViewController *mapVC = [[MapViewController alloc] init];
+    CLLocationCoordinate2D test = CLLocationCoordinate2DMake(37.774866,-122.394556);
+    MapAnnotation *mapAnnotation = [[MapAnnotation alloc]initWithLocation:test];
+    [mapAnnotation setTitle:business.name];
+    mapAnnotation.imageUrl = business.imageUrl;
+    mapAnnotation.reviewsNum = [NSString stringWithFormat:@"Reviews: %ld", (long)business.numReviews];
+    mapVC.mapAnnotation = mapAnnotation;
+
+    [self.navigationController pushViewController:mapVC animated:YES];
 }
 
 #pragma helper functions
