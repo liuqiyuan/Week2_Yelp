@@ -17,11 +17,14 @@ NSString * const kYelpConsumerSecret = @"33QCvh5bIF5jIHR5klQr7RtBDhQ";
 NSString * const kYelpToken = @"uRcRswHFYa1VkDrGV6LAW2F8clGh5JHV";
 NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 
-@interface MainViewController () <UITableViewDataSource, UITableViewDelegate, FiltersViewControllerDelegate>
+@interface MainViewController () <UITableViewDataSource, UITableViewDelegate, FiltersViewControllerDelegate, UISearchBarDelegate>
+
+@property (nonatomic, strong) UIRefreshControl *refreshController;
 
 @property (nonatomic, strong) YelpClient *client;
 @property (nonatomic, strong) NSArray *businessesDict;
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (nonatomic, strong) NSString *searchKeyword;
 
 - (void) fetchBusinessWithQuery:(NSString *)query params:(NSDictionary *)params;
 
@@ -37,6 +40,8 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
         self.client = [[YelpClient alloc] initWithConsumerKey:kYelpConsumerKey consumerSecret:kYelpConsumerSecret accessToken:kYelpToken accessSecret:kYelpTokenSecret];
         
         [self fetchBusinessWithQuery:@"Restaurants" params:nil];
+        
+        self.searchKeyword = @"Chinese Restaurant";
     }
     return self;
 }
@@ -48,6 +53,16 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     
     self.title = @"Yelp";
     
+    // Set refresh controll
+    self.refreshController = [[UIRefreshControl alloc]init];
+    [self.refreshController addTarget:self action:@selector(refreshPage) forControlEvents:UIControlEventValueChanged];
+    [self.tableView insertSubview:self.refreshController atIndex:0];
+    
+    // Set search bar
+    UISearchBar *searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(self.navigationItem.titleView.frame.size.width, 0, self.navigationItem.titleView.frame.size.width, self.navigationItem.titleView.frame.size.height)];
+    searchBar.delegate = self;
+    self.navigationItem.titleView = searchBar;
+    
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     
@@ -55,6 +70,15 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filter" style:UIBarButtonItemStylePlain target:self action:@selector(onFilterButtonClick)];
+}
+
+- (void) refreshPage {
+    [self fetchBusinessWithQuery:@"Restaurants" params:nil];
+}
+
+// Search Bar actions
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
+    [self fetchBusinessWithQuery:@"Restaurants" params:nil];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -96,6 +120,7 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
         NSArray *businessDictResponse = response[@"businesses"];
         self.businessesDict = [Business businessesWithDicts:businessDictResponse];
         [self.tableView reloadData];
+        [self.refreshController endRefreshing];
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         NSLog(@"error: %@", [error description]);
     }];
