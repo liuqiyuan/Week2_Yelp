@@ -8,15 +8,22 @@
 
 #import "MainViewController.h"
 #import "YelpClient.h"
+#import "Business.h"
+#import "BusinessCell.h"
+#import "FiltersViewController.h"
 
 NSString * const kYelpConsumerKey = @"vxKwwcR_NMQ7WaEiQBK_CA";
 NSString * const kYelpConsumerSecret = @"33QCvh5bIF5jIHR5klQr7RtBDhQ";
 NSString * const kYelpToken = @"uRcRswHFYa1VkDrGV6LAW2F8clGh5JHV";
 NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 
-@interface MainViewController ()
+@interface MainViewController () <UITableViewDataSource, UITableViewDelegate, FiltersViewControllerDelegate>
 
 @property (nonatomic, strong) YelpClient *client;
+@property (nonatomic, strong) NSArray *businessesDict;
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+
+- (void) fetchBusinessWithQuery:(NSString *)query params:(NSDictionary *)params;
 
 @end
 
@@ -29,11 +36,7 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
         // You can register for Yelp API keys here: http://www.yelp.com/developers/manage_api_keys
         self.client = [[YelpClient alloc] initWithConsumerKey:kYelpConsumerKey consumerSecret:kYelpConsumerSecret accessToken:kYelpToken accessSecret:kYelpTokenSecret];
         
-        [self.client searchWithTerm:@"Thai" success:^(AFHTTPRequestOperation *operation, id response) {
-            NSLog(@"response: %@", response);
-        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-            NSLog(@"error: %@", [error description]);
-        }];
+        [self fetchBusinessWithQuery:@"Restaurants" params:nil];
     }
     return self;
 }
@@ -42,6 +45,68 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 {
     [super viewDidLoad];
     // Do any additional setup after loading the view from its nib.
+    
+    self.title = @"Yelp";
+    
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    
+    [self.tableView registerNib:[UINib nibWithNibName:@"BusinessCell" bundle:nil] forCellReuseIdentifier:@"BusinessCell"];
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filter" style:UIBarButtonItemStylePlain target:self action:@selector(onFilterButtonClick)];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    BusinessCell *cell = [tableView dequeueReusableCellWithIdentifier:@"BusinessCell"];
+    cell.business = self.businessesDict[indexPath.row];
+    return cell;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.businessesDict.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    [self.prototypeCell setBusiness:self.businessesDict[indexPath.row]];
+    [self.prototypeCell layoutIfNeeded];
+    CGSize size = [self.prototypeCell.contentView systemLayoutSizeFittingSize:UILayoutFittingCompressedSize];
+    return size.height + 1;
+}
+
+#pragma - Filter delegate method
+- (void)filtersViewController:(FiltersViewController *)filtersViewController didChangeFilters:(NSDictionary *)filters {
+    // Fire a new event
+    [self fetchBusinessWithQuery:@"Restaurants" params:filters];
+    NSLog(@"Filter event: %@", filters);
+}
+
+#pragma - private method
+- (void) onFilterButtonClick {
+    FiltersViewController *vc = [[FiltersViewController alloc] init];
+    vc.delegate = self;
+    
+    UINavigationController *nvc = [[UINavigationController alloc]initWithRootViewController:vc];
+    [self presentViewController:nvc animated:YES completion:nil];
+}
+
+- (void)fetchBusinessWithQuery:(NSString *)query params:(NSDictionary *)params {
+    [self.client searchWithTerm:query params:params success:^(AFHTTPRequestOperation *operation, id response) {
+        NSLog(@"response: %@", response);
+        NSArray *businessDictResponse = response[@"businesses"];
+        self.businessesDict = [Business businessesWithDicts:businessDictResponse];
+        [self.tableView reloadData];
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        NSLog(@"error: %@", [error description]);
+    }];
+}
+
+#pragma for caculating row height
+- (BusinessCell *)prototypeCell {
+    if (!_prototypeCell) {
+        _prototypeCell = [self.tableView dequeueReusableCellWithIdentifier:@"BusinessCell"];
+    }
+    return _prototypeCell;
 }
 
 - (void)didReceiveMemoryWarning
