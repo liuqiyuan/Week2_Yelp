@@ -8,11 +8,13 @@
 
 #import "MapAnnotation.h"
 #import "MapKit/MapKit.h"
+#import "Business.h"
 
 @implementation MapAnnotation
 
 @synthesize coordinate;
 @synthesize title;
+@synthesize subtitle;
 
 - (id)initWithLocation:(CLLocationCoordinate2D)coord {
     self = [super init];
@@ -24,6 +26,14 @@
 
 - (void)setTitle:(NSString *)titleStr {
     title = [NSString stringWithString:titleStr];
+}
+
+- (void)setSubTitle:(NSString *)subTitleStr {
+    title = [NSString stringWithString:subTitleStr];
+}
+
+- (void)setBusiness:(Business *)business {
+    self.business = business;
 }
 
 @end

@@ -17,6 +17,10 @@
 @property (nonatomic, strong) NSString *address;
 @property (nonatomic, strong) NSString *categories;
 @property (nonatomic, assign) CGFloat distance;
+@property (nonatomic, strong) NSString *phone;
+@property (nonatomic, assign) BOOL isClosed;
+@property (nonatomic, assign) CGFloat latitude;
+@property (nonatomic, assign) CGFloat longitude;
 
 + (NSArray *) businessesWithDicts: (NSArray *)dictionaries;
 

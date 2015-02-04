@@ -22,6 +22,8 @@
         
         self.categories = [categoryNames componentsJoinedByString:@", "];
         self.name = dictionary[@"name"];
+        self.phone = dictionary[@"display_phone"];
+        self.isClosed = dictionary[@"is_closed"];
         self.imageUrl = dictionary[@"image_url"];
         
         NSArray *addresses = [dictionary valueForKeyPath:@"location.address"];
@@ -29,6 +31,10 @@
         NSArray *neighborhoods = [dictionary valueForKeyPath:@"location.neighborhoods"];
         NSString *neighborhood = neighborhoods.count > 0 ? neighborhoods[0] : @"";
         self.address = [NSString stringWithFormat:@"%@%@", street, neighborhood];
+        NSDictionary *coordinate = [dictionary valueForKeyPath:@"location.coordinate"];
+        NSString *latitudeStr = coordinate[@"latitude"];
+        self.latitude = (CGFloat)[latitudeStr floatValue];
+        self.longitude = (CGFloat)[coordinate[@"longitude"] floatValue];
         
         self.numReviews = [dictionary[@"review_count"] integerValue];
         self.ratingImageUrl = dictionary[@"rating_img_url"];

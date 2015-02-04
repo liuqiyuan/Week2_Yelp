@@ -110,12 +110,12 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     Business *business = self.businessesDict[indexPath.row];
     
     MapViewController *mapVC = [[MapViewController alloc] init];
-    CLLocationCoordinate2D test = CLLocationCoordinate2DMake(37.774866,-122.394556);
+    CLLocationCoordinate2D test = CLLocationCoordinate2DMake(business.latitude,business.longitude);
     MapAnnotation *mapAnnotation = [[MapAnnotation alloc]initWithLocation:test];
     [mapAnnotation setTitle:business.name];
-    mapAnnotation.imageUrl = business.imageUrl;
-    mapAnnotation.reviewsNum = [NSString stringWithFormat:@"Reviews: %ld", (long)business.numReviews];
+    [mapAnnotation setSubTitle:business.address];
     mapVC.mapAnnotation = mapAnnotation;
+    [mapVC setBusiness:business];
 
     [self.navigationController pushViewController:mapVC animated:YES];
 }
@@ -147,10 +147,13 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 
 - (void)fetchBusinessWithQuery:(NSString *)query params:(NSDictionary *)params {
     [SVProgressHUD show];
+    [SVProgressHUD setBackgroundColor: [UIColor blackColor]];
+    [SVProgressHUD setForegroundColor:[UIColor whiteColor]];
     [SVProgressHUD showInfoWithStatus:@"Loading ..."];
     
     [self.client searchWithTerm:query params:params success:^(AFHTTPRequestOperation *operation, id response) {
         //NSLog(@"response: %@", response);
+        
         NSArray *businessDictResponse = response[@"businesses"];
         self.businessesDict = [Business businessesWithDicts:businessDictResponse];
         [self.tableView reloadData];
