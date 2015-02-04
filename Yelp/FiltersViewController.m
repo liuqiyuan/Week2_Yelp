@@ -105,6 +105,18 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     return header;
 }
 
+//- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+//    CGRect headerFrame = self.tableView.tableHeaderView.frame;
+//    headerFrame.size.height = headerFrame.size.height + 100;
+//    UIView *headerView = [[UIView alloc] initWithFrame:headerFrame];
+////    if (section == 0) {
+////        [headerView setBackgroundColor:[UIColor greenColor]];
+////    } else {
+////        [headerView setBackgroundColor:[UIColor redColor]];
+////    }
+//    return headerView;
+//}
+
 #pragma - switch cell delegate methods
 - (void) switchCell:(SwitchCell *)cell didUpdateValue:(BOOL)value {
     NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
