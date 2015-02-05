@@ -19,6 +19,7 @@
 - (void)awakeFromNib {
     // Initialization code
     self.selectionStyle = UITableViewCellSelectionStyleNone;
+    self.toggleSwitch.transform = CGAffineTransformMakeScale(0.75, 0.75);
 }
 
 - (void) setOn:(BOOL)on {

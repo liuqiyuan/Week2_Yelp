@@ -11,24 +11,38 @@
 
 static NSString *const SECTION_DEAL = @"DEAL";
 static NSString *const SECTION_CATEGORY = @"CATEGORY";
-static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
+static NSString *const SECTION_RADIUS = @"RADIUS";
+static NSString *const SECTION_SORT = @"SORT";
 
 
 @interface FiltersViewController () <UITableViewDataSource, UITableViewDelegate, SwitchCellDelegate>
 
 @property (nonatomic, readonly) NSDictionary *filters;
 @property (nonatomic, readonly) NSArray *filterSectionsArray;
-@property (nonatomic, strong) NSMutableIndexSet *expandedSections;
 
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (nonatomic, strong) NSArray *categories;
 
 // Selected items
+// Todo: use better data structures
 @property (nonatomic, strong) NSMutableSet *selectedCategories;
 @property (nonatomic, assign) BOOL selectedDeal;
+@property (nonatomic, assign) BOOL selectedClosed;
+@property (nonatomic, strong) NSString *selectedRadius;
+@property (nonatomic, assign) BOOL selectedRadiusOn;
+@property (nonatomic, assign) NSInteger selectedRadiusIndex;
+@property (nonatomic, strong) NSString *selectedSort;
+@property (nonatomic, assign) BOOL selectedSortOn;
+@property (nonatomic, assign) NSInteger selectedSortIndex;
+
+// Expand control
+@property (nonatomic, assign) BOOL isRaduisExpanded;
+@property (nonatomic, assign) BOOL isSortExpanded;
+@property (nonatomic, assign) BOOL isCategoryExpanded;
 
 
 - (void) initCategories;
+- (NSString *) getCurrentDate;
 
 @end
 
@@ -47,7 +61,7 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     // Do any additional setup after loading the view from its nib.
     
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(onCancelButtonClick)];
-     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]initWithTitle:@"Apply" style:UIBarButtonItemStylePlain target:self action:@selector(onApplyButtonClick)];
+     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]initWithTitle:@"Search" style:UIBarButtonItemStylePlain target:self action:@selector(onApplyButtonClick)];
     
     self.title = @"Filters";
     
@@ -67,6 +81,7 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     NSString *type = sectionDict[@"section"];
     
     SwitchCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SwitchCell"];
+    
     if ([type isEqualToString:SECTION_CATEGORY]) {
         cell.titleLable.text = self.categories[indexPath.row][@"name"];
         cell.on = [self.selectedCategories containsObject:rowArray[indexPath.row]];
@@ -77,6 +92,32 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
         cell.on = self.selectedDeal;
         cell.delegate = self;
         return cell;
+    } else if ([type isEqualToString:SECTION_RADIUS]) {
+        cell.titleLable.text = rowArray[indexPath.row];
+        if (indexPath.row == 0) {
+            cell.on = self.isRaduisExpanded;
+        } else {
+            if (indexPath.row == self.selectedRadiusIndex) {
+                cell.on = YES;
+            } else {
+                cell.on = NO;
+            }
+        }
+        cell.delegate = self;
+        return cell;
+    } else if ([type isEqualToString:SECTION_SORT]) {
+        cell.titleLable.text = rowArray[indexPath.row];
+        if (indexPath.row == 0) {
+            cell.on = self.isSortExpanded;
+        } else {
+            if (indexPath.row == self.selectedSortIndex) {
+                cell.on = YES;
+            } else {
+                cell.on = NO;
+            }
+        }
+        cell.delegate = self;
+        return cell;
     }
     return cell;
 }
@@ -85,13 +126,12 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     
 }
 
+
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     NSDictionary *dict = self.filterSectionsArray[section];
     NSArray *arr = dict[@"filters"];
-    if ([dict[@"section"] isEqualToString:SECTION_DROPDOWN]) {
-        if (![self.expandedSections containsIndex:section]) {
-            return 1;
-        }
+    if (([dict[@"section"] isEqualToString:SECTION_RADIUS] && !self.isRaduisExpanded) || ([dict[@"section"] isEqualToString:SECTION_SORT] && !self.isSortExpanded)) {
+        return 1;
     }
     return arr.count;
 }
@@ -105,24 +145,79 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     return header;
 }
 
-//- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-//    CGRect headerFrame = self.tableView.tableHeaderView.frame;
-//    headerFrame.size.height = headerFrame.size.height + 100;
-//    UIView *headerView = [[UIView alloc] initWithFrame:headerFrame];
-////    if (section == 0) {
-////        [headerView setBackgroundColor:[UIColor greenColor]];
-////    } else {
-////        [headerView setBackgroundColor:[UIColor redColor]];
-////    }
-//    return headerView;
-//}
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 45;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 38)];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(10, 5, tableView.frame.size.width, 38)];
+    [label setFont:[UIFont boldSystemFontOfSize:18]];
+    NSString *string = self.filterSectionsArray[section][@"title"];
+    [label setText:string];
+    [view addSubview:label];
+    [view setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+    return view;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    if (section == 3) {
+        return 20;
+    } else {
+        return 0;
+    }
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 0)];
+    
+    if (section == 3) {
+        view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 0)];
+        UIButton *button = [[UIButton alloc]initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 20)];
+        [button setTitle:@"See All" forState:UIControlStateNormal];
+        [button setTitleColor:[UIColor grayColor] forState:UIControlStateNormal];
+        button.titleLabel.font = [UIFont systemFontOfSize:12];
+        [button addTarget:self action:@selector(expandCategories) forControlEvents:UIControlEventTouchUpInside];
+        [view addSubview:button];
+        [view setBackgroundColor:[UIColor clearColor]];
+    }
+    return view;
+}
+
+- (void) expandCategories {
+    self.isCategoryExpanded = !self.isCategoryExpanded;
+    [self.tableView reloadData];
+}
 
 #pragma - switch cell delegate methods
 - (void) switchCell:(SwitchCell *)cell didUpdateValue:(BOOL)value {
     NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
     NSArray *rowArray = self.filterSectionsArray[indexPath.section][@"filters"];
-    if (rowArray.count > 0 && [rowArray[0][@"code"] isEqualToString:@"deal"]) {
-        self.selectedDeal = value;
+    NSString *section = self.filterSectionsArray[indexPath.section][@"section"];
+    if ([section isEqualToString:SECTION_DEAL]) {
+        if ([rowArray[indexPath.row][@"code"] isEqualToString:@"deal"]) {
+            self.selectedDeal = value;
+        } else {
+            self.selectedClosed = value;
+        }
+    } else if ([section isEqualToString:SECTION_RADIUS]) {
+        self.selectedRadius = rowArray[indexPath.row];
+        self.selectedRadiusOn = value;
+        if (indexPath.row == 0) {
+            self.isRaduisExpanded = value;
+        } else if (value) {
+            self.selectedRadiusIndex = indexPath.row;
+        }
+        [self.tableView reloadData];
+    } else if ([section isEqualToString:SECTION_SORT]) {
+        self.selectedSort = rowArray[indexPath.row];
+        self.selectedSortOn = value;
+        if (indexPath.row == 0) {
+            self.isSortExpanded = value;
+        } else if (value) {
+            self.selectedSortIndex = indexPath.row;
+        }
+        [self.tableView reloadData];
     } else {
         if (value) {
             [self.selectedCategories addObject:self.categories[indexPath.row]];
@@ -146,16 +241,43 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     if (self.selectedDeal) {
         [filters setObject:@"true" forKey:@"deals_filter"];
     }
+    if (self.selectedClosed) {
+        
+    }
+    if (self.isSortExpanded) {
+        [filters setObject:[NSString stringWithFormat:@"%ld", (long)self.selectedSortIndex] forKey:@"sort"];
+    }
+    if (self.isRaduisExpanded) {
+        [filters setObject:[NSString stringWithFormat:@"%ld", (long)self.selectedRadiusIndex * 5 * 1600] forKey:@"radius_filter"];
+    }
     return filters;
 }
 
 #pragma - getter for filterSectionsArray
 - (NSArray *)filterSectionsArray {
     NSMutableArray *array = [NSMutableArray array];
-    NSDictionary *dealDict = @{@"title":@"Deals", @"filters":@[@{@"name": @"Offering a Deal", @"code": @"deal"}], @"section":SECTION_DEAL};
-    NSDictionary *radiusDict = @{@"title":@"Radius", @"filters":@[@"Auto", @"1 mile", @"5 miles", @"10 miles", @"20 miles"], @"section":SECTION_DROPDOWN, @"select":@"0"};
-    NSDictionary *sortDict = @{@"title":@"Sort by", @"filters":@[@"Best Match", @"Distance", @"Rating", @"Most Reviewed"], @"section":SECTION_DROPDOWN, @"select":@"0"};
-    NSDictionary *categoryDict = @{@"title":@"Category", @"filters":self.categories, @"section":SECTION_CATEGORY};
+    NSDictionary *dealDict = @{@"title":@"Most Popular",
+                               @"filters":@[
+                                    @{@"name": @"Offering a Deal", @"code": @"deal"},
+                                    @{@"name": [NSString stringWithFormat:@"Open Now [ %@ ]", [self getCurrentDate]], @"code": @"open"}
+                                ],
+                               @"section":SECTION_DEAL};
+    NSDictionary *radiusDict = @{@"title":@"Radius",
+                                 @"filters":@[@"Auto", @"1 mile", @"5 miles", @"10 miles", @"20 miles"],
+                                 @"section":SECTION_RADIUS};
+    NSDictionary *sortDict = @{@"title":@"Sort by",
+                               @"filters":@[@"Best Match", @"Distance", @"Highest Rated", @"Most Reviewed"],
+                               @"section":SECTION_SORT};
+    NSDictionary *categoryDict = @{@"title":@"Category",
+                                   @"filters":self.categories,
+                                   @"section":SECTION_CATEGORY};
+    
+    if (!self.isCategoryExpanded) {
+        NSArray *subset = [self.categories subarrayWithRange:NSMakeRange(0, 2)];
+        categoryDict = @{@"title":@"Category",
+                         @"filters":subset,
+                         @"section":SECTION_CATEGORY};
+    }
     
     [array addObject: dealDict];
     [array addObject: radiusDict];
@@ -163,6 +285,14 @@ static NSString *const SECTION_DROPDOWN = @"DROPDOWN";
     [array addObject: categoryDict];
     
     return array;
+}
+
+- (NSString *) getCurrentDate {
+    NSDate *currDate = [NSDate date];
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc]init];
+    [dateFormatter setDateFormat:@"dd/MM HH:mm"];
+    NSString *dateString = [dateFormatter stringFromDate:currDate];
+    return dateString;
 }
 
 - (void) onCancelButtonClick {

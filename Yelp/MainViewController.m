@@ -28,6 +28,7 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 @property (nonatomic, strong) NSArray *businessesDict;
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (nonatomic, strong) NSString *searchKeyword;
+@property (nonatomic, strong) UISearchBar *searchBar;
 
 - (void) fetchBusinessWithQuery:(NSString *)query params:(NSDictionary *)params;
 
@@ -46,7 +47,7 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
         
         [self fetchBusinessWithQuery:@"Restaurants" params:nil];
         
-        self.searchKeyword = @"Chinese Restaurant";
+        self.searchKeyword = @"Restaurant";
     }
     return self;
 }
@@ -72,9 +73,9 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
     [self.tableView insertSubview:self.refreshController atIndex:0];
     
     // Set search bar
-    UISearchBar *searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(self.navigationItem.titleView.frame.size.width, 0, self.navigationItem.titleView.frame.size.width, self.navigationItem.titleView.frame.size.height)];
-    searchBar.delegate = self;
-    self.navigationItem.titleView = searchBar;
+    self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(self.navigationItem.titleView.frame.size.width, 0, self.navigationItem.titleView.frame.size.width, self.navigationItem.titleView.frame.size.height)];
+    self.searchBar.delegate = self;
+    self.navigationItem.titleView = self.searchBar;
     
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filter" style:UIBarButtonItemStylePlain target:self action:@selector(onFilterButtonClick)];
 }
@@ -133,7 +134,7 @@ NSString * const kYelpTokenSecret = @"mqtKIxMIR4iBtBPZCmCLEb-Dz3Y";
 - (void)filtersViewController:(FiltersViewController *)filtersViewController didChangeFilters:(NSDictionary *)filters {
     // Fire a new event
     [self fetchBusinessWithQuery:@"Restaurants" params:filters];
-    NSLog(@"Applied filters: %@", filters);
+    NSLog(@"Applied filters: %@ with Query: %@", filters, self.searchKeyword);
 }
 
 #pragma - private method
